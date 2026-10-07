@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Club Check-in – Flow Mockup</title>
+<style>
+  :root {
+    --bg:#eef0f3; --card:#fff; --text:#14181f; --muted:#667085; --line:#e4e7ec;
+    --accent:#0f766e; --accent-text:#fff; --ok:#12805c; --okbg:#e7f7ef; --bad:#c0262d; --badbg:#fdecec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0e1013; --card:#181b22; --text:#eef0f4; --muted:#98a2b3; --line:#2a2f3a; --accent:#2dd4bf; --accent-text:#06201d; --ok:#4ade80; --okbg:#10291c; --bad:#f87171; --badbg:#2d1416; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Sarabun",sans-serif; }
+  header { max-width:980px; margin:0 auto; padding:20px 16px 8px; }
+  header h1 { font-size:20px; margin:0 0 2px; }
+  header p { margin:0; color:var(--muted); font-size:13px; }
+  .steps { max-width:980px; margin:12px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; gap:6px; }
+  .steps button { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; cursor:pointer; }
+  .steps button[aria-current="true"] { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
+  .steps .who { color:var(--muted); font-size:11px; display:block; line-height:1; }
+  .stage { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:24px; align-items:start; }
+  @media (max-width:760px){ .stage{ grid-template-columns:1fr; } }
+  .phone { background:var(--card); border:1px solid var(--line); border-radius:28px; padding:18px 16px 22px; min-height:620px; box-shadow:0 8px 30px rgb(0 0 0/.08); }
+  .notes { color:var(--muted); font-size:14px; }
+  .notes h2 { color:var(--text); font-size:16px; margin:0 0 8px; }
+  .notes li { margin:6px 0; }
+  .notes code { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-size:13px; }
+  .screen { display:none; } .screen.on { display:block; }
+  h3 { margin:0 0 4px; font-size:20px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 14px; }
+  .box { background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:12px 0; font-size:14px; }
+  .box dt { color:var(--muted); font-size:12px; margin-top:8px; } .box dt:first-child { margin-top:0; }
+  .box dd { margin:0; }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 4px; }
+  label b { color:var(--bad); }
+  input[type=text],input[type=email],input[type=password] { width:100%; font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .check { display:flex; gap:8px; font-size:13px; color:var(--muted); margin:14px 0; align-items:flex-start; }
+  .btn { display:block; width:100%; border:0; background:var(--accent); color:var(--accent-text); font:inherit; font-weight:600; padding:12px; border-radius:12px; cursor:pointer; text-align:center; text-decoration:none; }
+  .btn.alt { background:var(--bg); color:var(--text); border:1px solid var(--line); }
+  .btn + .btn { margin-top:8px; }
+  .center { text-align:center; }
+  .tick { width:64px; height:64px; border-radius:50%; background:var(--okbg); color:var(--ok); display:grid; place-items:center; font-size:34px; margin:18px auto 10px; }
+  .mail { border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:14px; }
+  .mail .hd { background:var(--bg); padding:10px 12px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); }
+  .mail .bd { padding:14px; }
+  .qrbox { width:210px; height:210px; margin:10px auto; background:#fff; padding:10px; border-radius:10px; }
+  .qrbox svg { width:100%; height:100%; }
+  .timer { text-align:center; font-variant-numeric:tabular-nums; font-size:13px; color:var(--muted); }
+  .code { text-align:center; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--muted); margin-top:4px; letter-spacing:.5px; }
+  .cam { background:#000; border-radius:14px; aspect-ratio:4/3; position:relative; display:grid; place-items:center; color:#fff9; font-size:13px; margin:10px 0; }
+  .cam::after { content:""; position:absolute; inset:20%; border:3px solid #fffd; border-radius:16px; }
+  .count { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-top:10px; }
+  .result { border-radius:16px; padding:22px 16px; text-align:center; margin:10px 0; }
+  .result.ok { background:var(--okbg); border:2px solid var(--ok); color:var(--ok); }
+  .result.bad { background:var(--badbg); border:2px solid var(--bad); color:var(--bad); }
+  .result .ic { font-size:48px; line-height:1; }
+  .result .t { font-size:20px; font-weight:700; margin:8px 0 2px; }
+  .result .n { font-size:26px; font-weight:800; color:var(--text); margin:4px 0; }
+  .result .d { font-size:14px; color:var(--text); opacity:.85; }
+  .sim { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+  .sim button { border:1px solid var(--line); background:var(--bg); color:var(--text); border-radius:10px; padding:8px; font:inherit; font-size:12px; cursor:pointer; }
+  table { border-collapse:collapse; width:100%; font-size:12px; margin:6px 0 14px; }
+  th,td { border:1px solid var(--line); padding:5px 7px; text-align:left; vertical-align:top; }
+  th { background:var(--bg); color:var(--muted); font-weight:600; }
+  .tag { display:inline-block; font-size:11px; background:var(--okbg); color:var(--ok); border-radius:6px; padding:1px 6px; margin-left:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Weekly Run Club — Registration &amp; Check-in</h1>
+  <p>Clickable flow mockup (no real backend). Click through the steps, or use the buttons inside each screen.</p>
+</header>
+<nav class="steps" id="steps"></nav>
+
+<div class="stage">
+  <div class="phone" id="phone">
+
+    <!-- 1 Register -->
+    <section class="screen" id="s-register">
+      <h3>Sunday Morning 10K</h3>
+      <p class="sub">Weekly community run · Register to get your check-in QR</p>
+      <dl class="box">
+        <dt>When</dt><dd>Sun, 12 Oct 2026 · 06:00</dd>
+        <dt>Where</dt><dd>Lumphini Park, Gate 1 (สวนลุมพินี ประตู 1)</dd>
+        <dt>Route</dt><dd>2 loops of the park, ~10 km. Water stations at 3 km and 7 km.</dd>
+        <dt>Notes</dt><dd>Bring your own bottle. Finish snacks provided.</dd>
+      </dl>
+      <label>Full name <b>*</b></label><input type="text" placeholder="e.g. Somchai Jaidee">
+      <label>Email <b>*</b></label><input type="email" placeholder="you@example.com">
+      <label>Social media <b>*</b></label><input type="text" placeholder="Instagram / Facebook / Line handle">
+      <label class="check"><input type="checkbox"> <span>I agree that my name, email and social handle are collected for this event only (PDPA). <b style="color:var(--bad)">*</b></span></label>
+      <button class="btn" data-go="success">Register</button>
+      <p class="sub center" style="margin-top:10px">One seat per email · all fields required</p>
+    </section>
+
+    <!-- 2 Success -->
+    <section class="screen" id="s-success">
+      <div class="tick">✓</div>
+      <h3 class="center">You're registered!</h3>
+      <p class="sub center">We sent a confirmation to <b>somchai@example.com</b>.<br>Please check your Spam folder if you don't see it.</p>
+      <dl class="box">
+        <dt>Event</dt><dd>Sunday Morning 10K</dd>
+        <dt>When</dt><dd>Sun, 12 Oct 2026 · 06:00</dd>
+      </dl>
+      <button class="btn alt" data-go="register">Back to form</button>
+      <p class="sub center" style="margin-top:14px">Variant errors you'd see on the form: <i>"This email is already registered"</i> · <i>"Event is full"</i></p>
+    </section>
+
+    <!-- 3 Email -->
+    <section class="screen" id="s-email">
+      <div class="mail">
+        <div class="hd"><b>From:</b> Run Club<br><b>To:</b> somchai@example.com<br><b>Subject:</b> You're in! Sunday Morning 10K</div>
+        <div class="bd">
+          <p style="margin-top:0">Hi Somchai,</p>
+          <p>You're registered for <b>Sunday Morning 10K</b>.</p>
+          <dl class="box">
+            <dt>When</dt><dd>Sun, 12 Oct 2026 · 06:00</dd>
+            <dt>Where</dt><dd>Lumphini Park, Gate 1</dd>
+            <dt>Route</dt><dd>2 loops, ~10 km</dd>
+          </dl>
+          <p>On event day, open your check-in QR and show it to our staff at the start line.</p>
+          <button class="btn" data-go="qr">Open my check-in QR</button>
+          <p class="sub" style="margin-top:12px">The QR is generated fresh every time you open it, is valid for 5 minutes and works once. Please don't share it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 QR -->
+    <section class="screen" id="s-qr">
+      <h3 class="center">Your check-in QR</h3>
+      <p class="sub center">Somchai Jaidee · Sunday Morning 10K</p>
+      <div class="qrbox" id="qrbox"></div>
+      <div class="code" id="qrcode">—</div>
+      <div class="timer">Valid for <b id="timer">5:00</b> · refreshes automatically</div>
+      <button class="btn alt" style="margin-top:14px" id="regen">Generate new QR now</button>
+      <p class="sub center" style="margin-top:12px">Before event day this page shows:<br><i>"Check-in opens on Sun, 12 Oct 2026."</i></p>
+    </section>
+
+    <!-- 5 Staff PIN -->
+    <section class="screen" id="s-pin">
+      <h3>Staff check-in</h3>
+      <p class="sub">Enter the staff PIN to open the scanner.</p>
+      <label>Staff PIN</label><input type="password" placeholder="••••••">
+      <button class="btn" style="margin-top:14px" data-go="scan">Open scanner</button>
+    </section>
+
+    <!-- 6 Scanner -->
+    <section class="screen" id="s-scan">
+      <h3>Scan QR</h3>
+      <p class="sub">Sunday Morning 10K · Sun, 12 Oct 2026</p>
+      <div class="cam">Camera view</div>
+      <div class="count"><span>Checked in: <b>18</b> / 42 registered</span><span>Last: Nok A.</span></div>
+      <p class="sub" style="margin-top:14px">Simulate a scan result:</p>
+      <div class="sim">
+        <button data-r="ok">✅ Valid</button>
+        <button data-r="used">🔴 Already used</button>
+        <button data-r="done">🔴 Already checked in</button>
+        <button data-r="expired">🔴 Expired</button>
+        <button data-r="day">🔴 Wrong day</button>
+        <button data-r="invalid">🔴 Not recognised</button>
+      </div>
+      <button class="btn alt" style="margin-top:10px" data-go="search">Search by name / email</button>
+    </section>
+
+    <!-- 7 Result -->
+    <section class="screen" id="s-result">
+      <div class="result" id="resBox"></div>
+      <button class="btn" data-go="scan">Scan next</button>
+      <p class="sub center" style="margin-top:10px">Result stays on screen for ~3 seconds, then returns to the camera.</p>
+    </section>
+
+    <!-- 8 Manual search -->
+    <section class="screen" id="s-search">
+      <h3>Manual check-in</h3>
+      <p class="sub">Fallback if the camera or the attendee's QR doesn't work.</p>
+      <input type="text" placeholder="Search name or email" value="somchai">
+      <dl class="box">
+        <dt>Somchai Jaidee</dt><dd>somchai@example.com · @somchai.runs</dd>
+      </dl>
+      <button class="btn" data-r="ok">Check in</button>
+      <button class="btn alt" data-go="scan">Back to scanner</button>
+    </section>
+
+    <!-- 9 Sheet -->
+    <section class="screen" id="s-sheet">
+      <h3>Google Sheet (database)</h3>
+      <p class="sub">Three tabs. You edit <b>Event</b>; the system writes the rest.</p>
+      <b style="font-size:13px">Tab: Event <span class="tag">you edit</span></b>
+      <table><tr><th>key</th><th>value</th></tr>
+        <tr><td>name</td><td>Sunday Morning 10K</td></tr>
+        <tr><td>datetime</td><td>2026-10-12 06:00</td></tr>
+        <tr><td>place</td><td>Lumphini Park, Gate 1</td></tr>
+        <tr><td>route</td><td>2 loops, ~10 km…</td></tr>
+        <tr><td>notes</td><td>Bring your bottle…</td></tr>
+        <tr><td>capacity</td><td>50</td></tr></table>
+      <b style="font-size:13px">Tab: Registrations</b>
+      <table><tr><th>id</th><th>name</th><th>email</th><th>social</th><th>consent</th><th>checked_in_at</th></tr>
+        <tr><td>r1</td><td>Somchai J.</td><td>somchai@…</td><td>@somchai.runs</td><td>yes</td><td>06:12:40</td></tr>
+        <tr><td>r2</td><td>Nok A.</td><td>nok@…</td><td>@nok</td><td>yes</td><td></td></tr></table>
+      <b style="font-size:13px">Tab: Codes (cross-check log)</b>
+      <table><tr><th>code</th><th>reg</th><th>issued</th><th>used_at</th><th>result</th></tr>
+        <tr><td>12102026061030K7Q2M</td><td>r1</td><td>06:10:30</td><td>06:12:40</td><td>ok</td></tr>
+        <tr><td>12102026061145X9B4D</td><td>r1</td><td>06:11:45</td><td>06:13:02</td><td>already checked in</td></tr></table>
+    </section>
+  </div>
+
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<script>
+const STEPS = [
+  { id:"register", label:"Register",       who:"Attendee", notes:["Event details are read from the <code>Event</code> tab of the Google Sheet (Thai or English text both display fine).","Name, email, social and consent are all required.","Server rejects a duplicate email (case-insensitive) and a full event."] },
+  { id:"success",  label:"Confirmed",      who:"Attendee", notes:["Data is saved to the <code>Registrations</code> tab, then the confirmation email is sent.","Reminds attendee to check Spam."] },
+  { id:"email",    label:"Email",          who:"Attendee", notes:["Event info + one button. The button links to the QR page with a long private token (not the QR content itself).","Email can't show a live QR image, so the button opens a page that makes one on demand."] },
+  { id:"qr",       label:"QR page",        who:"Attendee", notes:["Every open issues a new code: <code>ddmmyyyyhhmmss + 5 random chars</code>, saved on the server against this attendee.","Auto-refreshes before the 5-minute window ends.","Before event day: shows 'Check-in opens on …' and issues nothing."] },
+  { id:"pin",      label:"Staff PIN",      who:"Staff",    notes:["Single shared PIN so strangers can't scan (and burn) attendees' codes."] },
+  { id:"scan",     label:"Scanner",        who:"Staff",    notes:["Phone camera reads the QR; sends it to the server.","Live counter of checked-in vs registered.","Use the simulate buttons to see every result screen."] },
+  { id:"result",   label:"Result",         who:"Staff",    notes:["Server checks: code exists → event day → within ±5 min (server clock) → code unused → attendee not already checked in.","Green shows the attendee's name so staff can match the person.","Every attempt (pass or fail) is logged in the <code>Codes</code> tab."] },
+  { id:"search",   label:"Manual search",  who:"Staff",    notes:["Fallback when the camera or the QR fails. Still writes to the same log."] },
+  { id:"sheet",    label:"Sheet",          who:"Backend",  notes:["Everything lives in one Google Sheet, so you can read, filter and export the check-in log directly.","Cross-check = <code>Registrations.checked_in_at</code> filled in for people who really attended."] },
+];
+const RESULTS = {
+  ok:      {c:"ok",  i:"✓", t:"Check-in successful", n:"Somchai Jaidee", d:"Welcome! Sunday Morning 10K"},
+  used:    {c:"bad", i:"✕", t:"QR already used", d:"This QR code has already been used. Please verify the information again."},
+  done:    {c:"bad", i:"✕", t:"Already checked in", n:"Somchai Jaidee", d:"This attendee checked in at 06:12:40. Please verify the information again."},
+  expired: {c:"bad", i:"✕", t:"QR expired", d:"This QR is older than 5 minutes. Ask the attendee to reopen their QR page."},
+  day:     {c:"bad", i:"✕", t:"Wrong date", d:"This QR was not issued today. Please verify the information again."},
+  invalid: {c:"bad", i:"✕", t:"QR not recognised", d:"This code isn't in our system. Please verify the information again."},
+};
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+let cur = "register", timerId = null, secs = 300;
+
+const nav = $("#steps");
+STEPS.forEach((s, i) => {
+  const b = document.createElement("button");
+  b.innerHTML = `${i + 1}. ${s.label}<span class="who">${s.who}</span>`;
+  b.onclick = () => go(s.id); b.dataset.id = s.id; nav.appendChild(b);
+});
+
+function go(id) {
+  cur = id;
+  $$(".screen").forEach((el) => el.classList.toggle("on", el.id === "s-" + id));
+  $$("#steps button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
+  const st = STEPS.find((s) => s.id === id);
+  $("#notes").innerHTML = st ? `<h2>${st.who} · ${st.label}</h2><ul>${st.notes.map((n) => `<li>${n}</li>`).join("")}</ul>` : "";
+  clearInterval(timerId);
+  if (id === "qr") startQR();
+}
+function show(r) {
+  const x = RESULTS[r];
+  $("#resBox").className = "result " + x.c;
+  $("#resBox").innerHTML = `<div class="ic">${x.i}</div><div class="t">${x.t}</div>${x.n ? `<div class="n">${x.n}</div>` : ""}<div class="d">${x.d}</div>`;
+  go("result");
+}
+function pad(n, l = 2) { return String(n).padStart(l, "0"); }
+function newCode() {
+  const d = new Date(), a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let r = ""; for (let i = 0; i < 5; i++) r += a[Math.floor(Math.random() * a.length)];
+  return pad(d.getDate()) + pad(d.getMonth() + 1) + d.getFullYear() + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + r;
+}
+function startQR() {
+  secs = 300; paint();
+  timerId = setInterval(() => { secs--; if (secs <= 0) { secs = 300; paint(); } tick(); }, 1000);
+}
+function paint() {
+  const code = newCode(); $("#qrcode").textContent = code;
+  try { const q = qrcode(0, "M"); q.addData(code); q.make(); $("#qrbox").innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); }
+  catch { $("#qrbox").textContent = "QR library not loaded"; }
+  tick();
+}
+function tick() { $("#timer").textContent = Math.floor(secs / 60) + ":" + pad(secs % 60); }
+
+document.addEventListener("click", (e) => {
+  const g = e.target.closest("[data-go]"); if (g) return go(g.dataset.go);
+  const r = e.target.closest("[data-r]"); if (r) return show(r.dataset.r);
+});
+$("#regen").onclick = () => { secs = 300; paint(); };
+go("register");
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "runclub-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tests/dev-server.js"],
+      "port": 8787
+    },
+    {
+      "name": "mockup",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8766", "--directory", "mockup"],
+      "port": 8766
+    },
+    {
+      "name": "qr-app",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "qr-app"],
+      "port": 8765
+    }
+  ]
+}

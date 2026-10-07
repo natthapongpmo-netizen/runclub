@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6f8">
+<title>Run Club Registration</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<main>
+  <img id="banner" class="banner" alt="" hidden>
+  <img id="logo" class="logo" alt="" hidden>
+
+  <div id="loading"><div class="spinner" role="status" aria-label="Loading"></div></div>
+  <div id="loadError" class="notice bad" role="alert" hidden></div>
+
+  <section id="event" hidden>
+    <h1 id="eventName"></h1>
+    <p class="sub">Register to get your check-in QR by email.</p>
+    <div class="card"><dl class="details" id="details"></dl></div>
+    <p id="seats" class="sub"></p>
+
+    <form id="form" class="card" novalidate>
+      <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+      <input id="name" name="name" type="text" autocomplete="name" maxlength="100" required placeholder="e.g. Somchai Jaidee">
+      <p class="field-error" id="err-name" role="alert"></p>
+
+      <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required placeholder="you@example.com">
+      <p class="field-error" id="err-email" role="alert"></p>
+
+      <label for="social">Social media <span class="req" aria-hidden="true">*</span></label>
+      <input id="social" name="social" type="text" autocomplete="off" maxlength="100" required placeholder="Instagram / Facebook / Line handle">
+      <p class="field-error" id="err-social" role="alert"></p>
+
+      <div class="hp" aria-hidden="true"><label>Website <input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+
+      <label class="consent" for="consent">
+        <input id="consent" type="checkbox" required>
+        <span>I agree that my name, email and social media handle are collected and used for this event only. <span class="req" aria-hidden="true">*</span></span>
+      </label>
+      <p class="field-error" id="err-consent" role="alert"></p>
+
+      <div id="formNotice" class="notice bad" role="alert" hidden></div>
+      <button id="submit" class="btn" type="submit">Register</button>
+      <p class="sub center" style="margin:10px 0 0">All fields are required · one seat per email</p>
+    </form>
+
+    <section id="done" class="card center" hidden>
+      <div class="tick" aria-hidden="true">✓</div>
+      <h2>You're registered!</h2>
+      <p id="doneMsg" class="sub"></p>
+      <button id="resend" class="btn alt" type="button" hidden>Resend my confirmation email</button>
+    </section>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  var $ = App.el;
+  var lastEmail = '';
+
+  function setError(field, msg) {
+    var input = $(field), err = $('err-' + field);
+    err.textContent = msg || '';
+    if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  }
+  function clearErrors() { ['name', 'email', 'social', 'consent'].forEach(function (f) { setError(f, ''); }); $('formNotice').hidden = true; }
+  function notice(msg) { var n = $('formNotice'); n.textContent = msg; n.hidden = !msg; }
+
+  function renderSeats(c) {
+    var s = $('seats');
+    if (c.seatsLeft === null) { s.textContent = ''; return; }
+    s.textContent = c.seatsLeft > 0 ? c.seatsLeft + ' of ' + c.capacity + ' seats left' : 'This event is full.';
+    if (c.seatsLeft === 0) { $('submit').disabled = true; notice('Registration is full. Please contact the organiser.'); }
+  }
+
+  function renderEvent(c) {
+    App.applyBrand(c.brand);
+    document.title = (c.event.event_name || 'Run Club') + ' – Registration';
+    $('eventName').textContent = c.event.event_name;
+    var d = $('details');
+    [['When', c.event.when], ['Where', c.event.place], ['Route', c.event.route], ['Notes', c.event.notes]].forEach(function (p) {
+      if (!p[1]) return;
+      var dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = p[0]; dd.textContent = p[1]; d.appendChild(dt); d.appendChild(dd);
+    });
+    renderSeats(c);
+    $('loading').hidden = true; $('event').hidden = false;
+  }
+
+  function validate() {
+    clearErrors();
+    var ok = true;
+    var name = $('name').value.trim(), email = $('email').value.trim(), social = $('social').value.trim();
+    if (!name) { setError('name', 'Please enter your full name.'); ok = false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('email', 'Please enter a valid email address.'); ok = false; }
+    if (!social) { setError('social', 'Please enter your social media handle.'); ok = false; }
+    if (!$('consent').checked) { setError('consent', 'Please accept the data consent to continue.'); ok = false; }
+    if (!ok) { var first = document.querySelector('[aria-invalid=true]'); if (first) first.focus(); }
+    return ok;
+  }
+
+  function showDone(emailSent, email) {
+    lastEmail = email;
+    $('form').hidden = true; $('done').hidden = false;
+    $('doneMsg').textContent = emailSent
+      ? 'We sent a confirmation to ' + email + '. Please check your Spam folder if you don\'t see it.'
+      : 'Your seat is saved, but we couldn\'t send the confirmation email just now. Use the button below to try again.';
+    $('resend').hidden = emailSent;
+    $('done').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!validate()) return;
+    var btn = $('submit'), email = $('email').value.trim();
+    btn.disabled = true; btn.textContent = 'Registering…';
+    App.api('register', {
+      name: $('name').value.trim(), email: email, social: $('social').value.trim(),
+      consent: $('consent').checked, website: $('website').value
+    }).then(function (r) {
+      if (r.status === 'registered') return showDone(r.emailSent, email.toLowerCase());
+      if (r.status === 'duplicate') {
+        setError('email', 'This email is already registered.');
+        notice('Already registered? We can resend your confirmation email.');
+        var again = document.createElement('button');
+        again.type = 'button'; again.className = 'btn alt'; again.style.marginTop = '8px'; again.textContent = 'Resend my confirmation email';
+        again.onclick = function () { lastEmail = email.toLowerCase(); $('form').hidden = true; $('done').hidden = false; $('doneMsg').textContent = ''; doResend(); };
+        $('formNotice').appendChild(document.createElement('br')); $('formNotice').appendChild(again);
+      } else if (r.status === 'full') { notice('Sorry, this event just became full.'); }
+      else if (r.status === 'invalid') { setError(r.field, r.message); }
+      else { notice('Something went wrong. Please try again.'); }
+    }).catch(function (err) { notice(App.friendlyError(err)); })
+      .finally(function () { btn.disabled = false; btn.textContent = 'Register'; });
+  });
+
+  function doResend() {
+    var b = $('resend'); b.hidden = false; b.disabled = true; b.textContent = 'Sending…';
+    App.api('resend', { email: lastEmail }).then(function (r) {
+      var msg = { sent: 'Sent! Please check your inbox (and Spam folder).', rate_limited: 'We just sent one. Please wait a couple of minutes before trying again.',
+        not_found: 'We couldn\'t find that email.', send_failed: 'We couldn\'t send the email. Please try again later.' }[r.status] || 'Something went wrong.';
+      $('doneMsg').textContent = msg;
+    }).catch(function (err) { $('doneMsg').textContent = App.friendlyError(err); })
+      .finally(function () { b.disabled = false; b.textContent = 'Resend my confirmation email'; });
+  }
+  $('resend').addEventListener('click', doResend);
+
+  App.api('config').then(renderEvent).catch(function (err) {
+    $('loading').hidden = true;
+    var n = $('loadError'); n.textContent = App.friendlyError(err); n.hidden = false;
+  });
+})();
+</script>
+</body>
+</html>

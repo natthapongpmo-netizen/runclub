@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6f8">
+<meta name="robots" content="noindex">
+<title>Staff check-in</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<main>
+  <img id="logo" class="logo" alt="" hidden>
+
+  <!-- PIN -->
+  <section id="login">
+    <h1>Staff check-in</h1>
+    <p class="sub" id="loginSub">Enter the staff PIN to open the scanner.</p>
+    <form id="pinForm" class="card" autocomplete="off">
+      <label for="pin">Staff PIN</label>
+      <input id="pin" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+      <div id="pinError" class="notice bad" role="alert" hidden></div>
+      <button class="btn" id="pinBtn" type="submit" style="margin-top:14px">Open scanner</button>
+    </form>
+  </section>
+
+  <!-- Scanner -->
+  <section id="scanner" hidden>
+    <h1 id="evTitle" style="font-size:20px">Scan QR</h1>
+    <p class="sub" id="evWhen"></p>
+    <div class="video-box">
+      <video id="video" playsinline muted></video>
+      <div class="frame"></div>
+      <div class="off" id="camOff" hidden></div>
+    </div>
+    <div class="counter"><span>Checked in <b id="cIn">0</b> / <b id="cReg">0</b> registered</span></div>
+    <div class="btn-row">
+      <button class="btn alt" id="searchBtn" type="button">Search name / email</button>
+      <button class="btn alt" id="flipBtn" type="button" style="flex:0 0 auto;width:auto">Flip camera</button>
+    </div>
+    <button class="btn alt" id="lockBtn" type="button" style="margin-top:8px">Lock</button>
+  </section>
+
+  <!-- Manual search -->
+  <section id="search" hidden>
+    <h1 style="font-size:20px">Manual check-in</h1>
+    <p class="sub">Fallback if the camera or the attendee's QR doesn't work.</p>
+    <input id="q" type="search" placeholder="Search name, email or social" autocomplete="off">
+    <ul class="results" id="results"></ul>
+    <p class="sub" id="searchHint" style="margin-top:12px">Type at least 2 characters.</p>
+    <button class="btn alt" id="backBtn" type="button" style="margin-top:12px">Back to scanner</button>
+  </section>
+</main>
+
+<div class="overlay" id="overlay" role="alert" hidden></div>
+
+<script src="config.js"></script>
+<script src="assets/common.js"></script>
+<script src="vendor/jsQR.js"></script>
+<script>
+(function () {
+  var $ = App.el, PIN_KEY = 'staffPin';
+  var pin = '', stream = null, facing = 'environment', raf = 0, lastScan = 0;
+  var busy = false, paused = false, lastCode = '', lastCodeAt = 0, dismissTimer = 0;
+  var work = document.createElement('canvas'), wctx = work.getContext('2d', { willReadFrequently: true });
+
+  var MSG = {
+    ok:                 { cls: 'ok',  icon: '✓', title: 'Check-in successful', desc: 'Welcome!' },
+    used:               { cls: 'bad', icon: '✕', title: 'QR already used', desc: 'This QR code has already been used. Please verify the information again.' },
+    already_checked_in: { cls: 'bad', icon: '✕', title: 'Already checked in', desc: 'This attendee has already checked in. Please verify the information again.' },
+    expired:            { cls: 'bad', icon: '✕', title: 'QR expired', desc: 'This QR is older than 5 minutes. Ask the attendee to reopen their QR page.' },
+    wrong_day:          { cls: 'bad', icon: '✕', title: 'Wrong date', desc: 'This QR was not issued today, or there is no event today. Please verify the information again.' },
+    invalid:            { cls: 'bad', icon: '✕', title: 'QR not recognised', desc: 'This code isn\'t in our system. Please verify the information again.' }
+  };
+
+  function view(id) { ['login', 'scanner', 'search'].forEach(function (v) { $(v).hidden = v !== id; }); }
+
+  function stats(s) { if (!s) return; $('cIn').textContent = s.checkedIn; $('cReg').textContent = s.registered; }
+
+  /* ---------- overlay ---------- */
+  function overlay(cls, icon, title, name, desc, dismissible, ms) {
+    var o = $('overlay');
+    o.className = 'overlay ' + cls; o.innerHTML = '';
+    var box = document.createElement('div');
+    function add(c, t) { if (!t) return; var d = document.createElement('div'); d.className = c; d.textContent = t; box.appendChild(d); }
+    add('ic', icon); add('t', title); add('n', name); add('d', desc);
+    if (dismissible) add('tap', 'Tap to continue');
+    o.appendChild(box); o.hidden = false;
+    clearTimeout(dismissTimer);
+    if (dismissible) dismissTimer = setTimeout(closeOverlay, ms || 3000);
+  }
+  function closeOverlay() { clearTimeout(dismissTimer); $('overlay').hidden = true; paused = false; }
+  $('overlay').addEventListener('click', function () { if (!paused || $('overlay').classList.contains('wait')) return; closeOverlay(); });
+
+  function showResult(r) {
+    if (r.status === 'unauthorized') { lock('PIN changed or incorrect. Please sign in again.'); return; }
+    var m = MSG[r.status] || { cls: 'bad', icon: '✕', title: 'Something went wrong', desc: 'Please try again.' };
+    var desc = m.desc;
+    if (r.status === 'already_checked_in' && r.at) desc = 'Checked in at ' + String(r.at).slice(11, 19) + '. Please verify the information again.';
+    overlay(m.cls, m.icon, m.title, r.name, desc, true, r.status === 'ok' ? 2500 : 4000);
+    stats(r.stats);
+    if (navigator.vibrate) navigator.vibrate(r.status === 'ok' ? 60 : [80, 60, 80]);
+  }
+
+  /* ---------- camera + scanning ---------- */
+  function startCam() {
+    stopCam();
+    $('camOff').hidden = true;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      camProblem('Camera not available. Open this page over HTTPS, or use manual search.'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 } }, audio: false })
+      .then(function (s) { stream = s; $('video').srcObject = s; return $('video').play(); })
+      .then(function () { loop(); })
+      .catch(function (e) {
+        camProblem(e && e.name === 'NotAllowedError' ? 'Camera permission was denied. Allow camera access in your browser settings, then tap here.' : 'Could not start the camera. Tap here to retry, or use manual search.');
+      });
+  }
+  function camProblem(text) { $('camOff').textContent = text; $('camOff').hidden = false; }
+  $('camOff').addEventListener('click', startCam);
+  function stopCam() {
+    cancelAnimationFrame(raf);
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    stream = null; $('video').srcObject = null;
+  }
+
+  function loop(ts) {
+    if (!stream) return;
+    raf = requestAnimationFrame(loop);
+    var v = $('video');
+    if (paused || busy || !v.videoWidth || (ts || 0) - lastScan < 120) return;
+    lastScan = ts || 0;
+    var scale = Math.min(1, 640 / v.videoWidth);
+    work.width = Math.round(v.videoWidth * scale); work.height = Math.round(v.videoHeight * scale);
+    wctx.drawImage(v, 0, 0, work.width, work.height);
+    var img = wctx.getImageData(0, 0, work.width, work.height);
+    var hit = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+    if (hit && hit.data) handle(hit.data);
+    else if (lastCode && Date.now() - lastCodeAt > 1500) lastCode = '';   // QR left the frame: allow scanning it again
+  }
+
+  function handle(data) {
+    var now = Date.now();
+    // The same QR is still in front of the camera after a result: don't re-submit it until it leaves the frame.
+    if (data === lastCode) { lastCodeAt = now; return; }
+    lastCode = data; lastCodeAt = now;
+    busy = paused = true;
+    overlay('wait', '…', 'Checking…', '', '', false);
+    App.api('verify', { pin: pin, code: data }).then(showResult).catch(function (e) {
+      lastCode = '';   // allow an immediate retry of the same QR
+      overlay('bad', '!', 'Couldn\'t reach the server', '', App.friendlyError(e), true, 4000);
+    }).finally(function () { busy = false; });
+  }
+
+  /* ---------- login / lock ---------- */
+  function enter(p) {
+    pin = p; sessionStorage.setItem(PIN_KEY, p);
+    view('scanner'); startCam();
+  }
+  function lock(msg) {
+    pin = ''; sessionStorage.removeItem(PIN_KEY); stopCam(); closeOverlay();
+    view('login'); $('pin').value = '';
+    var e = $('pinError'); e.textContent = msg || ''; e.hidden = !msg;
+  }
+  $('lockBtn').addEventListener('click', function () { lock(''); });
+
+  function tryLogin(p, silent) {
+    var btn = $('pinBtn'); btn.disabled = true; btn.textContent = 'Checking…';
+    return App.api('login', { pin: p }).then(function (r) {
+      if (r.status === 'ok') { stats(r.stats); enter(p); }
+      else { sessionStorage.removeItem(PIN_KEY); if (!silent) { var e = $('pinError'); e.textContent = 'Incorrect PIN.'; e.hidden = false; } }
+    }).catch(function (e) { if (!silent) { var n = $('pinError'); n.textContent = App.friendlyError(e); n.hidden = false; } })
+      .finally(function () { btn.disabled = false; btn.textContent = 'Open scanner'; });
+  }
+  $('pinForm').addEventListener('submit', function (e) { e.preventDefault(); $('pinError').hidden = true; tryLogin($('pin').value.trim(), false); });
+  $('flipBtn').addEventListener('click', function () { facing = facing === 'environment' ? 'user' : 'environment'; startCam(); });
+
+  /* ---------- manual search ---------- */
+  var searchTimer = 0, searchSeq = 0;
+  $('searchBtn').addEventListener('click', function () { paused = true; stopCam(); view('search'); $('q').focus(); });
+  $('backBtn').addEventListener('click', function () { view('scanner'); paused = false; startCam(); });
+  $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(doSearch, 300); });
+
+  function doSearch() {
+    var q = $('q').value.trim(), seq = ++searchSeq, list = $('results');
+    if (q.length < 2) { list.innerHTML = ''; $('searchHint').textContent = 'Type at least 2 characters.'; return; }
+    App.api('search', { pin: pin, q: q }).then(function (r) {
+      if (seq !== searchSeq) return;
+      if (r.status === 'unauthorized') return lock('PIN changed or incorrect. Please sign in again.');
+      list.innerHTML = '';
+      $('searchHint').textContent = r.results.length ? '' : 'No matches.';
+      r.results.forEach(function (p) {
+        var li = document.createElement('li'), who = document.createElement('div'), b = document.createElement('b'), s = document.createElement('small');
+        who.className = 'who'; b.textContent = p.name; s.textContent = p.email + ' · ' + p.social; who.appendChild(b); who.appendChild(s); li.appendChild(who);
+        if (p.checkedIn) { var d = document.createElement('span'); d.className = 'done'; d.textContent = 'Checked in'; li.appendChild(d); }
+        else {
+          var btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = 'Check in';
+          btn.onclick = function () {
+            btn.disabled = true;
+            App.api('manual', { pin: pin, regId: p.id }).then(function (res) { showResult(res); paused = true; doSearch(); })
+              .catch(function (e) { btn.disabled = false; overlay('bad', '!', 'Couldn\'t reach the server', '', App.friendlyError(e), true, 3000); paused = true; });
+          };
+          li.appendChild(btn);
+        }
+        list.appendChild(li);
+      });
+      stats(r.stats);
+    }).catch(function (e) { $('searchHint').textContent = App.friendlyError(e); });
+  }
+
+  /* ---------- boot ---------- */
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopCam(); else if (!$('scanner').hidden) startCam(); });
+
+  App.api('config').then(function (c) {
+    App.applyBrand(c.brand);
+    $('evTitle').textContent = c.event.event_name || 'Scan QR';
+    $('evWhen').textContent = c.event.when || '';
+  }).catch(function () {});
+
+  var saved = sessionStorage.getItem(PIN_KEY);
+  if (saved) tryLogin(saved, true);
+})();
+</script>
+</body>
+</html>

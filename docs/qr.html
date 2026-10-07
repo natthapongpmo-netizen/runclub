@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6f8">
+<meta name="robots" content="noindex">
+<title>My check-in QR</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<main>
+  <img id="banner" class="banner" alt="" hidden>
+  <img id="logo" class="logo" alt="" hidden>
+
+  <div id="loading"><div class="spinner" role="status" aria-label="Loading"></div></div>
+
+  <section id="ok" hidden>
+    <h1 class="center">Your check-in QR</h1>
+    <p class="sub center"><span id="who"></span> · <span id="evName"></span></p>
+    <div class="qr-frame" id="qr" role="img" aria-label="Check-in QR code"></div>
+    <p class="qr-code" id="codeText"></p>
+    <p class="timer">Valid for <b id="left">5:00</b> · refreshes automatically</p>
+    <div class="bar"><i id="barFill"></i></div>
+    <button id="regen" class="btn alt" style="margin-top:16px" type="button">Generate a new QR now</button>
+    <p class="sub center" style="margin-top:14px">Turn your screen brightness up and show this to our staff. It works once, so please don't share it.</p>
+  </section>
+
+  <section id="msg" class="card center" hidden>
+    <div id="msgIcon" class="tick" aria-hidden="true"></div>
+    <h2 id="msgTitle"></h2>
+    <p id="msgBody" class="sub"></p>
+    <button id="retry" class="btn alt" type="button" hidden>Try again</button>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="assets/common.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script>
+(function () {
+  var $ = App.el;
+  var token = new URLSearchParams(location.search).get('t') || '';
+  var tick = null, issuedAt = 0, windowSec = 300, REFRESH_AT = 30, busy = false;
+
+  function show(which) { ['loading', 'ok', 'msg'].forEach(function (id) { $(id).hidden = id !== which; }); }
+
+  function message(icon, title, body, retry, tone) {
+    clearInterval(tick);
+    var i = $('msgIcon'); i.textContent = icon;
+    i.style.background = tone === 'bad' ? 'var(--bad-bg)' : tone === 'warn' ? 'var(--warn-bg)' : 'var(--ok-bg)';
+    i.style.color = tone === 'bad' ? 'var(--bad)' : tone === 'warn' ? 'var(--warn)' : 'var(--ok)';
+    $('msgTitle').textContent = title; $('msgBody').textContent = body; $('retry').hidden = !retry;
+    show('msg');
+  }
+
+  function draw(code) {
+    var q = qrcode(0, 'M'); q.addData(code); q.make();
+    $('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+    $('codeText').textContent = code;
+  }
+
+  function remaining() { return Math.max(0, Math.round(windowSec - (performance.now() - issuedAt) / 1000)); }
+
+  function render() {
+    var left = remaining();
+    $('left').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+    $('barFill').style.width = (100 * left / windowSec) + '%';
+    if (left <= REFRESH_AT && !busy) load(true);
+  }
+
+  function load(quiet) {
+    if (busy) return;
+    busy = true;
+    if (!quiet) show('loading');
+    App.api('issue', { token: token }).then(function (r) {
+      App.applyBrand(r.brand);
+      var who = r.name || '';
+      switch (r.status) {
+        case 'ok':
+          $('who').textContent = who; $('evName').textContent = r.eventName;
+          document.title = 'My check-in QR – ' + r.eventName;
+          windowSec = r.windowSec; issuedAt = performance.now();
+          draw(r.code); show('ok');
+          clearInterval(tick); tick = setInterval(render, 1000); render();
+          break;
+        case 'not_open':
+          message('📅', 'Check-in opens on ' + r.opensOn, 'Hi ' + who + ', your QR will be available on the event day. Come back to this page then.', false, 'warn'); break;
+        case 'closed':
+          message('⏹', 'Check-in has closed', 'This event has already taken place.', false, 'warn'); break;
+        case 'already_checked_in':
+          message('✓', 'You\'re checked in', 'Thanks ' + who + '! You checked in at ' + String(r.at).slice(11, 19) + '. Enjoy the run!', false, 'ok'); break;
+        case 'invalid_token':
+          message('!', 'This link isn\'t valid', 'Please open the button from your confirmation email again.', false, 'bad'); break;
+        default:
+          message('!', 'Something went wrong', 'Please try again.', true, 'bad');
+      }
+    }).catch(function (err) {
+      // keep showing the current QR while it is still valid; only fail loudly if there is nothing to show
+      if (quiet && !$('ok').hidden && remaining() > 0) return;
+      message('!', 'Couldn\'t load your QR', App.friendlyError(err), true, 'bad');
+    }).finally(function () { busy = false; });
+  }
+
+  $('regen').addEventListener('click', function () { load(true); });
+  $('retry').addEventListener('click', function () { load(false); });
+  // Phones throttle timers in the background; check immediately when the tab comes back.
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !$('ok').hidden) render(); });
+
+  if (!token) message('!', 'This link isn\'t valid', 'Please open the button from your confirmation email.', false, 'bad');
+  else load(false);
+})();
+</script>
+</body>
+</html>

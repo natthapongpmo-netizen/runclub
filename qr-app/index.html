@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --text: #14181f; --muted: #667085;
+    --line: #e4e7ec; --accent: #4f46e5; --accent-text: #fff; --ok: #12805c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1115; --card: #181b22; --text: #eef0f4; --muted: #98a2b3; --line: #2a2f3a; --accent: #818cf8; --accent-text: #0f1115; --ok: #4ade80; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Sarabun", sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 22px; margin: 4px 0 16px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--line); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); padding: 10px; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 0 0 6px; }
+  textarea, select { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 96px; resize: vertical; }
+  .row { display: flex; gap: 12px; margin-top: 12px; }
+  .row > div { flex: 1; }
+  input[type=color] { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: 3px; }
+  .qr-wrap { display: flex; justify-content: center; margin: 16px 0 4px; }
+  canvas#qr { width: min(100%, 320px); height: auto; aspect-ratio: 1; image-rendering: pixelated; border-radius: 8px; }
+  .btn { border: 0; background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 12px; cursor: pointer; width: 100%; }
+  .btn.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+  .btns { display: flex; gap: 8px; margin-top: 12px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .err { color: #d92d20; font-size: 14px; margin: 8px 0 0; min-height: 1.4em; }
+  .video-box { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 3/4; }
+  video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .frame { position: absolute; inset: 18%; border: 3px solid rgb(255 255 255 / .85); border-radius: 18px; box-shadow: 0 0 0 999px rgb(0 0 0 / .35); pointer-events: none; }
+  .result { margin-top: 12px; padding: 12px; border: 1px solid var(--ok); border-radius: 12px; word-break: break-all; }
+  .result small { color: var(--ok); font-weight: 700; display: block; margin-bottom: 4px; }
+  .result a { color: var(--accent); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>QR Studio</h1>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-gen" aria-selected="true">สร้าง QR</button>
+    <button role="tab" id="tab-scan" aria-selected="false">สแกน QR</button>
+  </div>
+
+  <!-- Generator -->
+  <section id="gen" class="card">
+    <label for="text">ข้อความหรือลิงก์ (QR อัปเดตทันทีที่พิมพ์)</label>
+    <textarea id="text" placeholder="https://example.com">https://example.com</textarea>
+    <div class="row">
+      <div><label for="fg">สี QR</label><input type="color" id="fg" value="#000000"></div>
+      <div><label for="bg">สีพื้นหลัง</label><input type="color" id="bg" value="#ffffff"></div>
+      <div>
+        <label for="ecl">ความทนทาน</label>
+        <select id="ecl">
+          <option value="L">ต่ำ (L)</option>
+          <option value="M" selected>กลาง (M)</option>
+          <option value="Q">สูง (Q)</option>
+          <option value="H">สูงสุด (H)</option>
+        </select>
+      </div>
+    </div>
+    <div class="qr-wrap"><canvas id="qr" width="300" height="300"></canvas></div>
+    <p class="err" id="genErr"></p>
+    <div class="btns">
+      <button class="btn" id="dl">ดาวน์โหลด PNG</button>
+      <button class="btn secondary" id="copy">คัดลอกภาพ</button>
+    </div>
+  </section>
+
+  <!-- Scanner -->
+  <section id="scan" class="card" hidden>
+    <div class="video-box">
+      <video id="video" playsinline muted></video>
+      <div class="frame"></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="toggleCam">เปิดกล้อง</button>
+      <button class="btn secondary" id="flip" hidden>สลับกล้อง</button>
+    </div>
+    <p class="err" id="scanErr"></p>
+    <div class="result" id="result" hidden>
+      <small>สแกนสำเร็จ</small>
+      <div id="resultText"></div>
+      <div class="btns">
+        <button class="btn secondary" id="copyResult">คัดลอก</button>
+        <a class="btn secondary" id="openLink" hidden target="_blank" rel="noopener" style="text-align:center;text-decoration:none">เปิดลิงก์</a>
+      </div>
+    </div>
+    <p class="hint">กล้องต้องใช้ผ่าน HTTPS หรือ localhost เท่านั้น และต้องอนุญาตการเข้าถึงกล้องในเบราว์เซอร์</p>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// ---------- Tabs ----------
+function showTab(name) {
+  const gen = name === "gen";
+  $("gen").hidden = !gen; $("scan").hidden = gen;
+  $("tab-gen").setAttribute("aria-selected", gen);
+  $("tab-scan").setAttribute("aria-selected", !gen);
+  if (gen) stopCam();
+}
+$("tab-gen").onclick = () => showTab("gen");
+$("tab-scan").onclick = () => showTab("scan");
+
+// ---------- Generator ----------
+// the library's default encoder truncates to 8 bits; force UTF-8 so Thai/emoji survive
+qrcode.stringToBytes = (s) => Array.from(new TextEncoder().encode(s));
+const canvas = $("qr"), ctx = canvas.getContext("2d");
+function drawQR() {
+  const text = $("text").value;
+  $("genErr").textContent = "";
+  if (!text) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+  try {
+    const qr = qrcode(0, $("ecl").value);
+    qr.addData(text, "Byte");   // Byte mode encodes UTF-8 — Thai text works
+    qr.make();
+    const n = qr.getModuleCount(), quiet = 4, size = 600;
+    const cell = Math.floor(size / (n + quiet * 2));
+    const px = cell * (n + quiet * 2);
+    canvas.width = canvas.height = px;
+    ctx.fillStyle = $("bg").value; ctx.fillRect(0, 0, px, px);
+    ctx.fillStyle = $("fg").value;
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
+  } catch (e) {
+    $("genErr").textContent = "ข้อความยาวเกินไปสำหรับ QR code (ลองลดความทนทานหรือตัดข้อความ)";
+  }
+}
+["input", "change"].forEach((ev) => ["text", "fg", "bg", "ecl"].forEach((id) => $(id).addEventListener(ev, drawQR)));
+$("dl").onclick = () => {
+  const a = document.createElement("a");
+  a.download = "qrcode.png"; a.href = canvas.toDataURL("image/png"); a.click();
+};
+$("copy").onclick = () => canvas.toBlob(async (blob) => {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    $("copy").textContent = "คัดลอกแล้ว ✓";
+  } catch { $("copy").textContent = "เบราว์เซอร์ไม่รองรับ"; }
+  setTimeout(() => ($("copy").textContent = "คัดลอกภาพ"), 1500);
+});
+drawQR();
+
+// ---------- Scanner ----------
+const video = $("video"), work = document.createElement("canvas"), wctx = work.getContext("2d", { willReadFrequently: true });
+let stream = null, raf = 0, facing = "environment", lastText = "";
+
+async function startCam() {
+  $("scanErr").textContent = "";
+  if (!navigator.mediaDevices?.getUserMedia) {
+    $("scanErr").textContent = "เบราว์เซอร์นี้เปิดกล้องไม่ได้ — ต้องเปิดผ่าน HTTPS หรือ localhost";
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 } }, audio: false });
+    video.srcObject = stream; await video.play();
+    $("toggleCam").textContent = "ปิดกล้อง"; $("flip").hidden = false;
+    tick();
+  } catch (e) {
+    $("scanErr").textContent = e.name === "NotAllowedError" ? "ไม่ได้รับอนุญาตให้ใช้กล้อง — กรุณากดอนุญาตในเบราว์เซอร์" : "เปิดกล้องไม่สำเร็จ: " + e.message;
+  }
+}
+function stopCam() {
+  cancelAnimationFrame(raf);
+  stream?.getTracks().forEach((t) => t.stop());
+  stream = null; video.srcObject = null;
+  $("toggleCam").textContent = "เปิดกล้อง"; $("flip").hidden = true;
+}
+function tick() {
+  if (!stream) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    // downscale for speed
+    const scale = Math.min(1, 640 / video.videoWidth);
+    work.width = Math.round(video.videoWidth * scale); work.height = Math.round(video.videoHeight * scale);
+    wctx.drawImage(video, 0, 0, work.width, work.height);
+    const img = wctx.getImageData(0, 0, work.width, work.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+    if (code && code.data && code.data !== lastText) { lastText = code.data; showResult(code.data); }
+  }
+  raf = requestAnimationFrame(tick);
+}
+function showResult(text) {
+  $("result").hidden = false; $("resultText").textContent = text;
+  const isUrl = /^https?:\/\//i.test(text);
+  $("openLink").hidden = !isUrl; if (isUrl) $("openLink").href = text;
+  navigator.vibrate?.(60);
+}
+$("toggleCam").onclick = () => (stream ? stopCam() : startCam());
+$("flip").onclick = () => { facing = facing === "environment" ? "user" : "environment"; stopCam(); startCam(); };
+$("copyResult").onclick = async () => {
+  try { await navigator.clipboard.writeText($("resultText").textContent); $("copyResult").textContent = "คัดลอกแล้ว ✓"; } catch {}
+  setTimeout(() => ($("copyResult").textContent = "คัดลอก"), 1500);
+};
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopCam(); });
+</script>
+</body>
+</html>
