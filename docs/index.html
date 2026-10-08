@@ -89,7 +89,7 @@
       dt.textContent = p[0]; dd.textContent = p[1]; d.appendChild(dt); d.appendChild(dd);
     });
     renderSeats(c);
-    if (!c.eventOk) {
+    if (c.eventOk === false) {   // only an explicit false closes the form (an older backend sends no eventOk)
       $('form').hidden = true;
       var n = $('loadError'); n.textContent = 'Registration isn\'t open yet. Please check back soon.'; n.hidden = false;
     }
