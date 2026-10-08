@@ -17,7 +17,8 @@ env.ctx.now_ = () => new Date(Date.now() + offsetMs);
 
 const ev = env.sheets.get('Event');
 const setEvent = (k, v) => ev.rows.forEach((r) => { if (r[0] === k) r[1] = v; });
-setEvent('datetime', formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd') + ' 06:00');   // today => check-in is open
+setEvent('date', formatDate(new Date(), 'Asia/Bangkok', 'dd-MM-yyyy'));   // today => check-in is open
+setEvent('time', '06:00');
 setEvent('staff_pin', 'DEVPIN88');
 setEvent('site_url', `http://localhost:${PORT}`);
 (process.env.EVENT_OVERRIDES || '').split(';').filter(Boolean).forEach((kv) => { const i = kv.indexOf('='); setEvent(kv.slice(0, i), kv.slice(i + 1)); });

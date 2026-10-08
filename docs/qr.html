@@ -18,12 +18,13 @@
   <section id="ok" hidden>
     <h1 class="center">Your check-in QR</h1>
     <p class="sub center"><span id="who"></span> · <span id="evName"></span></p>
+    <div id="phaseNote" class="notice warn" role="status" hidden></div>
     <div class="qr-frame" id="qr" role="img" aria-label="Check-in QR code"></div>
     <p class="qr-code" id="codeText"></p>
     <p class="timer">Valid for <b id="left">5:00</b> · refreshes automatically</p>
     <div class="bar"><i id="barFill"></i></div>
     <button id="regen" class="btn alt" style="margin-top:16px" type="button">Generate a new QR now</button>
-    <p class="sub center" style="margin-top:14px">Turn your screen brightness up and show this to our staff. It works once, so please don't share it.</p>
+    <p class="sub center" id="hint" style="margin-top:14px">Turn your screen brightness up and show this to our staff. It works once, so please don't share it.</p>
   </section>
 
   <section id="msg" class="card center" hidden>
@@ -54,6 +55,19 @@
     show('msg');
   }
 
+  // The QR is always shown. Scanning only passes on the event day, so before/after we just say so.
+  function showPhase(r) {
+    var n = $('phaseNote');
+    if (r.phase === 'before') {
+      n.textContent = 'This QR can only be used on the event day (' + r.opensOn + '). Keep this page and open it again on the day.';
+      n.hidden = false;
+    } else if (r.phase === 'after') {
+      n.textContent = 'This event has ended, so this QR can no longer be used.';
+      n.hidden = false;
+    } else { n.hidden = true; }
+    $('hint').hidden = r.phase === 'after';
+  }
+
   function draw(code) {
     var q = qrcode(0, 'M'); q.addData(code); q.make();
     $('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
@@ -78,6 +92,7 @@
       var who = r.name || '';
       switch (r.status) {
         case 'ok':
+          showPhase(r);
           $('who').textContent = who; $('evName').textContent = r.eventName;
           document.title = 'My check-in QR – ' + r.eventName;
           windowSec = r.windowSec; issuedAt = performance.now();
@@ -86,6 +101,8 @@
           break;
         case 'not_open':
           message('📅', 'Check-in opens on ' + r.opensOn, 'Hi ' + who + ', your QR will be available on the event day. Come back to this page then.', false, 'warn'); break;
+        case 'not_configured':
+          message('!', 'Check-in isn\'t ready yet', 'The organiser hasn\'t set the event date yet. Please try again later.', false, 'warn'); break;
         case 'closed':
           message('⏹', 'Check-in has closed', 'This event has already taken place.', false, 'warn'); break;
         case 'already_checked_in':

@@ -11,8 +11,13 @@ function formatDate(date, tz, pattern) {
     timeZone: tz, hourCycle: 'h23',
     year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
   }).formatToParts(date).forEach((p) => { parts[p.type] = p.value; });
-  const map = { yyyy: parts.year, MM: parts.month, dd: parts.day, HH: parts.hour, mm: parts.minute, ss: parts.second };
-  return pattern.replace(/yyyy|MM|dd|HH|mm|ss/g, (t) => map[t]);
+  // 'Z' = RFC 822 offset like +0700 / -0400 (what Apps Script's formatDate gives for the pattern 'Z')
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  const offMin = Math.round((asUtc - Math.floor(date.getTime() / 1000) * 1000) / 60000);
+  const abs = Math.abs(offMin);
+  const z = (offMin < 0 ? '-' : '+') + String(Math.floor(abs / 60)).padStart(2, '0') + String(abs % 60).padStart(2, '0');
+  const map = { yyyy: parts.year, MM: parts.month, dd: parts.day, HH: parts.hour, mm: parts.minute, ss: parts.second, Z: z };
+  return pattern.replace(/yyyy|MM|dd|HH|mm|ss|Z/g, (t) => map[t]);
 }
 
 function makeSheet(name) {
@@ -45,6 +50,7 @@ function createEnv() {
     getSheetByName: (n) => sheets.get(n) || null,
     insertSheet: (n) => { const s = makeSheet(n); sheets.set(n, s); return s; },
     getSheets: () => [...sheets.values()],
+    getSpreadsheetTimeZone: () => 'Asia/Bangkok',
     deleteSheet: (s) => sheets.delete(s.name)
   };
   const ctx = {

@@ -89,6 +89,10 @@
       dt.textContent = p[0]; dd.textContent = p[1]; d.appendChild(dt); d.appendChild(dd);
     });
     renderSeats(c);
+    if (!c.eventOk) {
+      $('form').hidden = true;
+      var n = $('loadError'); n.textContent = 'Registration isn\'t open yet. Please check back soon.'; n.hidden = false;
+    }
     $('loading').hidden = true; $('event').hidden = false;
   }
 
@@ -133,6 +137,7 @@
         $('formNotice').appendChild(document.createElement('br')); $('formNotice').appendChild(again);
       } else if (r.status === 'full') { notice('Sorry, this event just became full.'); }
       else if (r.status === 'invalid') { setError(r.field, r.message); }
+      else if (r.status === 'not_configured') { notice('Registration isn\'t open yet. Please check back soon.'); }
       else { notice('Something went wrong. Please try again.'); }
     }).catch(function (err) { notice(App.friendlyError(err)); })
       .finally(function () { btn.disabled = false; btn.textContent = 'Register'; });

@@ -12,6 +12,8 @@
 <main>
   <img id="logo" class="logo" alt="" hidden>
 
+  <div id="cfgError" class="notice bad" role="alert" hidden></div>
+
   <!-- PIN -->
   <section id="login">
     <h1>Staff check-in</h1>
@@ -215,6 +217,7 @@
     App.applyBrand(c.brand);
     $('evTitle').textContent = c.event.event_name || 'Scan QR';
     $('evWhen').textContent = c.event.when || '';
+    if (!c.eventOk) { var e = $('cfgError'); e.textContent = 'Event date/time is not set correctly in the Google Sheet. ' + c.eventError + ' Check-in will not work until this is fixed.'; e.hidden = false; }
   }).catch(function () {});
 
   var saved = sessionStorage.getItem(PIN_KEY);
