@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VING Run Club · After the run</title>
+<style>
+:root{--y:#fde412;--ink:#111;--card:#1b1b1b;--line:#333;--mut:#b5b5b5}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif}
+.app{max-width:520px;min-height:100vh;min-height:100dvh;margin:0 auto;background:var(--ink);display:flex;flex-direction:column}
+header{padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between}
+header img{height:20px;display:block}.step{color:var(--y);font-size:12px;font-weight:700;letter-spacing:2px}
+.bar{height:4px;background:#2a2a2a;margin:0 20px}.bar span{display:block;height:4px;background:var(--y);width:0;transition:width .25s}
+main{flex:1;padding:26px 20px 12px}
+h1{font-size:30px;line-height:1.1;margin:0 0 10px;font-weight:800}
+.sub{color:var(--mut);font-size:15px;line-height:1.5;margin:0 0 18px}
+.q{font-size:24px;line-height:1.2;font-weight:800;color:var(--y);margin:0 0 6px}
+.hint{color:var(--mut);font-size:13px;margin:0 0 16px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:#fff;border:2px solid var(--line);border-radius:12px;padding:15px 16px;margin:0 0 10px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.opt.on{background:var(--y);color:var(--ink);border-color:var(--y)}
+.opt small{display:block;font-weight:400;opacity:.8;font-size:13px;margin-top:2px}
+label.f{display:block;font-size:12px;letter-spacing:1.5px;font-weight:700;color:var(--y);margin:14px 0 6px;text-transform:uppercase}
+input[type=text],input[type=email],textarea{width:100%;background:var(--card);color:#fff;border:2px solid var(--line);border-radius:12px;padding:14px;font-size:16px;font-family:inherit}
+input:focus,textarea:focus{outline:none;border-color:var(--y)}textarea{min-height:110px;resize:vertical}
+.chk{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px;margin:0 0 10px;font-size:14px;line-height:1.45;cursor:pointer}
+.chk i{flex:none;width:22px;height:22px;border:2px solid var(--y);border-radius:6px;display:block;margin-top:1px;text-align:center;line-height:18px;color:var(--ink);font-style:normal;font-weight:800}
+.chk.on i{background:var(--y)}.chk.on{border-color:var(--y)}
+.rows .r{margin:0 0 16px}.rows .t{font-size:15px;font-weight:700;margin:0 0 8px}
+.scale{display:flex;gap:6px}.scale button{flex:1;background:var(--card);color:#fff;border:2px solid var(--line);border-radius:10px;padding:10px 0;font-size:18px;cursor:pointer;font-family:inherit}
+.scale button.on{background:var(--y);color:var(--ink);border-color:var(--y);font-weight:800}
+.scale.n button{font-size:15px;font-weight:700;padding:12px 0}
+.ends{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-top:4px}
+.note{background:#181818;border-left:4px solid var(--y);padding:12px 14px;font-size:13px;line-height:1.5;color:#ddd;margin:0 0 14px}
+.err{color:#ff8a80;font-size:14px;min-height:20px;margin:6px 0 0}
+footer{padding:12px 20px 24px;display:flex;gap:10px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--ink) 30%)}
+.btn{flex:1;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:inherit}
+.next{background:var(--y);color:var(--ink)}.back{flex:0 0 auto;background:#2a2a2a;color:#fff;padding:16px 20px}.btn[disabled]{opacity:.45}
+.hp{position:absolute;left:-9999px;opacity:0;height:0;width:0}
+.done{text-align:center;padding-top:30px}.done .big{font-size:56px}
+</style></head><body>
+<div class="app">
+<header><img alt="VING" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAABYCAYAAADbc6GhAAAZyElEQVR4nO2de5RkdXXvv9/9O6eqel5Ndc+rp3tePEbkcr14BcU3GKMxvvABAQkw3pvHjS5W7jUKXFjo0hgUY1aydCVZUWZAGEAZogR8cQNBBAwoEIMgBpBhZrqZgZmp7mYeXVXn/Pa+f9RAQObRj+pz6td9Pms1sxbdVftbp845+/x++8V0a/URF/M4TREUUiK0YXf9+Ina2049FUGpT7ZUf0cifpcGZ5adXRIwIhG1Uzgw/BN7ZtFSTfxD4rBIfXY6JouUCV+3i6PltS/85u9sc/eRXuTnznG+ah7q2gMJmKCpau+L+4dvzdJ2Olj9pKvIX2p9+k9KqRB+7MDfZZ7Yjt75aKRHe+VxLuJxPsUrQKwCuAhENwxzSUR56+wEDNaIAH4NwN/kLWaiWGKAw0lvPLrnNUDtvrz1TAQRfkRiOm1k6D0AMCasaf/6yMjw/ZkaLhg3ZoAISpbic/bwont4/I49eWuayZhB8HTvGq/6FpJv1aaeYJAVLuI8OMA5AAZAW99Ntlds5xO5qHG9T8r/x8VYGdIqxAyQMisYs3MBBONA7Knu1R54D5J8TkWDrj/+eDRzMV4wLjQBXEVe6+HPB9BRT+gzhbFN3aviknuvDuFDZnqiq8hcAIAHoIBq69+CQyPs2/ssgRsQMW8tEyc1GOwDtn3ukryljBcfyxmuwmrW2ywSAb5hm5y3m7O1XDApUgMdPmVP9xyXt5SZhA1WX++frl4Rx+5nrsSvSIlvdY5ztWHQhkHT/c6jYFwIAIjZ1drQvSJ5y5kYmgKuIn0+KZ2Wt5bxYEN9c2A8Gz6H1UdEEHYdV44OZ2+8YKKoB6TEqnp80Qwubz2h09yy8C3+6Z7vKHmnlOR/OoeF2jBo0wqHMQVaLmP58COmuA1xgKsQMwA81+5HnLeUw6L1U+lwvGW8VSgCaF13JyIbsrVcMBWsYZCY7/GDR5yVt5ZQsWcXrrGh6tXO6W1S4mkEYq0bQkgaCQEBABJmtHWamDEwH2IJQIeT0Fd9Xd5aDocSH5WIzDLzCgBQImD8QaV/168ytlwwBVrniZEin7Nn5izNW09I2KaVlXSw+mfwejfKco7sdxyZX3sznBc2rZ7lyO2W4hcMLEHNDJASYzWem7eWQ2HPLlxjwDuyDp6TgDZNRbAuU8MFbUFTQCpcrc3ypXlrCYXGlurxWn7uFleWLwNYpHWDFo5jWnjBgfT3Yx8iXAUX2BIEABKDGd5vm3uX5S3lYPimnuUqknmNAiPAvD2IvbU7s7Vc0C6sYTDHP0i29p6St5ZOJ91SPasU8TYp8e3aKLaqppuXhM1dCTf4uj0rgYXs1AOuwsU+sg/mreVA2I7e+VA7C2kOj0FCgHIl16CRvfGCdmAKuAglQi+3bZibt55OxAyRH6p+lhE3QLBE63krmh28xIFwYW2Ihm+HGkyn2TlmKOUt5TdJ6/YOKfEVWdfZiAO0oU+7qP6P2VouaDfa3F8bklQ/nreWTsO2LZmrT1evkJJ8moCEVM8WOi9L3JUIV2rTGiEG0yF8DQZ735C3lhdjBgqwlnlsDcaEABu5dO8z2RsvaDupgY4X2lDvsXlL6RRsR+98nzavlYqcZ02DFSm5mfLyyo+ltQcstbtZCsuD7A+mO4Wel7eWl7C1+l+MeFvWwXMRQJs6BuhVmRoumDbUA1Jmj5peZnaAa3eWYY/2zteGXuPmyPt1rMiwyoOXnYQkPARXmAJhuRC0gunge2ywujxvKc+jwrNdF+dkXqwUE6a8A18ffShjywXTiDUMcHIahqpn5K0lT+xhlHSBfU26Ws6jIB8O+BTj9vH7vqGPh5bSuz+YvtAbP5y3FgAY2dxdBeyMPFJ34c2MuIKfLTr6zCRazRaNCn7ets1dnLeevNDunsukzDML55EvB3QgXFN7jsJrguyPpQYCv2+bVlbyltIdybskliOzDuoxAnyCX9aGa/+creWCLNAEkC4epUnpkry15EG6tfrHiPgJy7ibdcHLOeg+qov8tVq3EQa202opAIcTUNr95lx1GMQr1uayU+0IiF295HgUrcBnKNYwWMQ/tqEjcj3Ps6a5tedkOnxJYNl3dCh4GQe9vXHp6JNq9r1Ag+mihnyD6U8vPAHCN1sz4+C5A/yY7XIN+1amhgsyxRRwMcve+CUb6puTt54sGNncXRXg7yWSBUWBYGdwmOdjXeeb5kNL6W0F0/G7tq17dV4SUvPnuDIrmT8lxQRpN/HIkc0ZWy7IGGsYXFlO9lb/k7y1ZMFcJ5e6Lp6gGT+UFRycQzqQaGD0bnj8lIEVFu4Pple9yul52LeheQvF+KGsK8/3971KBFifqeGCXDCgVRsiuMgGF67JW890YkNHvFmEH8t6RV9waA7pQEgkMAvzZuQN8Dzbtgx0ZW+69D4pc3nWbdtZIqC4B48P/zRbywV50ZobIgtV/YytDbFNqKjKZRKzXBQKdhaHTdTd55Kb5jRKl7oYK0JqEWAJwBjHw/aeAuAHmdk1RH4I54GW/fxkBcy4nqcioG+qYKpYw4BYPoChng8BtY1562k3Pu45y5X4phCzrkiADgiySe1hsCbKh3UgC/r37LTBnm8i4gW5NAOcJAZAYoqOYS0ydCDJUPUkJzjZMp46LhHgm/akS/0t2VouyJv9tSHivf2FDc27g/17duatqV3sfKxnAcw+BUP2D2RTREoAPKApNlnTHiVtByS4j3FwFDquUsGm2jVR3T5O4dyglpBNAwTvtC0LjuaK557IwiSN50qJJa1nfJ5EhCV6HVePjmRruKAT0ARwFTlG6/HFAD6Rt5520dtlZ6Iirwxt9SFlQJt2vxi/JN7fNlNHSY9rz7S0fPgRM/xzaCm9qoCU2e0lOjMLe3ueWthH2mmZV563RtY+F5XdNZkaLugorGkw8k9ssNpRDUUniw31zfHkx6E5bAdPASkT2sAGqePtHKhtnKnOAxinAyFhDrhCm+GNvIU3wOwssyXTPkehEvnTXFmWZp2jzhIB8vtcvPOxbC0XdBKmgCuxouDleSSPtJ/GOyXiqyzJW8f4kRKhDbtTdM4f8ajh0bz1TDfjz9qwuf9iHv8eWn8sSwBG8koMNX5rWu08jBIU52XdEpQEfNNUi9TdArQC6lLmm8B9f5S3lqlgBnqPj9KFE/sgAU2tIbRLuGJwLG89WTBuB7L/gHwDEtYSpBVMBxVcO63thRcc8XpGfE3WT0uMCSrvj5YVI2sL/rM2RMUuHtuy6Oi89UyWxtDCY0A7Jevt4KnAmDCPB7Bs+N68tWTFhPLGG4aNvq7BjbxF0wDi7TY4fYN4UnKtlBhlXnlOwKBXkcg476ugU2nNDZHFJfrPm4U3lQEAItN3uy6Zn/kYhKkggAH3kpg1jVYm5EDmrqgNEfhHBBlMl/mqetZ0vL8NVpcTfE/mQ6MiQBs65FyzGFlb8BKsYUDE07Gt5wN5a5koZnAk3gsNZ/XxPBTMqhZCE65cFZMrtW6N0Lr0IjWY4Uzb0Tu/3W/tjR92FS7MvMFbRECxkX17n83YckGH86LakMtscH5v3nomQn3LolVm9pogy2HJEFVPmom7gXt3PQizO0Prj2UpICVZk9btHW19300rK4Cdk3nwXADfsDGhXZWp4YJg0ARwXfIKtfiivLVMhJjJya4sC4LavnoeDXPLcLJM2IHwDHgD1pk3hJTSa2i1FCCwtp37wmlp91vo+N/yCZ7jdgyMFCNrCw6KNQ1w+Hhza8/JeWsZLwZ588zs6jXzmNTX5MryA03sP4JL6W0aSDsV26vHtes9RbFWSpQsFyAkYKlBjevIYLIcC3LAFJCYXQ64vBOmdB4OM8Qk/jt8cVqHwKRcABft2p0O9myA45+HlGZnBkhF5mpdzwZw8ZTfb3v3kT7Fu5Bxi2lGgG/i4SiOipG1BYdlf23IWxLb/YcAvpq3nkMy2LMExFEIcfvqICRDPe+IBMu8n2EPex426TWE8/46X3d/5hyOCGo6WGoAeIbVqpezZ2qVoj5xv+e6eETmfa8cAdOr2ffM3mwNF4SIAaAanLNLbHv397h09Mm8NR0Up0dC5Yigeu4dBoH9X3TJKS6wfl6Hw9sUHAhXjj7pB6s3I5ZzQ1puWgpIxKP8PnsXgG9O+n1+vmSuR3J21p+9NbJWdzqZvPaC2YemgFRkSTrGzwP4SN56DoZXOdqVKTqzbrYpklZSw4yC1pxSqMqrW69NS0MLpsMBBM+b0gCehY23MeJxmffpiQkDb+LA8NaMLRcEjjUMEuGMZHPv+/PWcjBIO3J25TGFzZQcSLx850/M477gUnoTA4i3Yqj7VZN9D2/8qMRgls9J+0fWNi0NdEpkQa60akPgxOlltrm7mreeA2KyPG8JBeNnSg6ERAKG18TPWm3eu9Tc2ZN5fX2o91gQv5158DwmkNo99zw1/LNMDRe8DBJBpbE/jyaAVOQ4pbsgby0HwqBLZ1ioeUYz5Wxrh+SffMM2S2ApvUgNBpxuIwt6JvrSWPUsV5F5WRY6kUBrKputO7UYWZs7qmiqhpkr1KoNsfObW3pPylvLi7H7EZOcH2ILk9nKlB0IB3bvMtNvIrRtrBRwZa7Ebnn3hF63s2cBgDOzHu9LB/im/drN43czNVzwMiQCSPsFgY1SzlvNxDEFpCRzBXq5PXZ053yCxQORGaZ9bk9B+2hLvWcUydV+TPeG1B/r+du/N641w7j7C/s63smYayyHvlcGu3aqqccFbYCteEJCfkabNhTc6huANgyuIqf6OcP/I28tLxAnArVKsYUVDm255XNZ7ZdQ3BrayFtLDHR8Y7JtwavH9fetFihr6Zhp6ysRQBs2GsFtyM5qwaEgGVUGdv2HKT4LYZiJQ2og7VLb1r0qbykAgCgVCEMbFjGraduawUW4QhPTkAKLZoCUWWbqzhnP3zcHj/ivFJxiWVfflwgovs/lOx/P1nDBobDHUHYDw1f5ht7GckAn/n40BaTMvjSRP2/9j5wFFQRH+zadGgvusBT/ziiwCykxUPBBe3rposP9aUScLSXOybJKlgQ0MS/kuuysFoyLyoCQSJy4C31T9wQ3aA37a0NinmWDvb8FsJ6rmDRSmBUJIgHRNgfC1ZvrTnDV+KMJnYF6wJVkwGvzvYf6OxvprprJGZkHz2MC3u5H/5K7MjVcMG7Yv/NBKv46tEQSYP8q3MF50y+QtijXVUgSK8h6mPuBs5P2hr1j2ejH7JkQn8RgOM/s4M0l/W6+25W4KvPno1bA9kryl8XI2g5mtIm/8vvsIQksDggA2gRInmTEH2jGtU0vYflgQqLo7xYQbXUgXLxzG2E3hjby1hIDBK/HYM+JB/y9wQFc25o/nh3iAN/QQefK387QbMEk6DlqeNQiu1C9JSHFAV+MEy7L0z6J1BTPQQI9gLOQtifeitMrfWAjb80AV2acAuce6PfJtt5XQ/imzIPnMWHGG7hs+45sDRdMhnjZ8A81tWtYCfMG2AkTAA22vdjCCof23+b7Rv8Nih+F1h8LiYGw0/ZsmrP0N3/lVM9xZZYzHRolgNZtXwT9RnZWC6ZKBH7Gj+lgiLUhnYAAW/LWMF1wHD+h0XYHQkJBrDMf1gFRD7iK9FWi8ks6ldq2uYvN8KGsB2cxJsxwOwZGfpGp4YIpweW1QYCfBhlkr6y8MfDXM66Q0OAQtQbBHe4ntPjxtDwnud38oZ+nv3IlHpt5u/OpYACM59n9WM8TkQCAT0rvcxXpzzK4SACawhz1imJkbXj8fHttw6sX95wuc/guy3rYWOA42hPagCfhslzxTyciciHGdCHSQ1/LqVHp7FUwfkkEDOHzT4sD4St37U639lwDx78IauRtYkCEk9BXfR0wfLcZIh3iAeMi0wljQJv2MKTrNmAka/MFU+TEE5E0tupFriFvcA7dQU3szJuS24SGr1G4KIQb6Hjgsl3j7p7dHKzulv1DJKdRUtuYtlB34v31WrdaSEsyM8CVGKXK8wAAQ9XXQnCyZVz7AUeA9g32b9uXreGCdlFePvIQDF8OsTYkVxbt3AHh49PzaNv5xGJx3homwrQ5kK5Vo5tgdktwF1ArmP4+G5q3UI1nS4lxlpXnrZG1tsMZv5Wd1YLpwMXub7RuD4RYG5IXJFKoPTBrU3ktrC3raU22FbF12ghr5K16wMVcrD7+hAG/m/kWXEyQ+E4rGFsQMlyyY4+AF6q3ZkjXQN4o+GMEloTTNowpiGA2Pae3WmPbyL2muDe0lF5NARN+EsTKLPevScA3rOkNV2ZntWA64cCu2zXF+hCbLeZFRLvPJ1YLqZZstjKtXxFPRAJiHRDe04QQMTOWzZig2l3xQK0YWTuDiLx8Tuv2VFEbMk76hwcB/DS47e9ZyLT7eKfpzb5hTzGwiyfrDBACgAIiWMeAlrAFh4erdm4z00thtGIr6/C0Utft5rx15EFIVQ9ABg6EK56rkXY9QmvznjGMAE31cXTh+3lrKWg/bmDkep/oLcVW1vhwTn/gGzYss20by/sEhmDmKmXy9YjwGl+3PbPuZJgIEWFgMbJ2hkLCu4gX+WZYqe15wb7Rp2j4f6E1ZgWsOrXXs8jC+k24rPYo1G4N72TIBhHA123UaXpt3loKpg8uqz2K1C4vVuPjQ8Su1GZAU04NoNoJecvIkszWBC7CFUGdDFlSImj2Pa547om8pRRMLzvi0t/6Mb2vqA0ZB3t7f4TUfsZQSutSAwRvss29ubbFz5LsNpUaC35kHj8PLZg+3ZCANs0rtBhZOwvo63tmr3P2KfVWL9JUDw3XPNEQZ1+FMYgsTvWAlGWJUs+f7HuYMAGzLF2eGpmdwly9uQ7DVbO2wvQgMAZM7WfR6OjdeWspyAb2j9yFxL5WBNTHQ9d3fNMeZClvHePDEoOU+KfpYM/pk3sDakjV6Jk+A9VVbvR13V4EEVsQaC1BDOt5PIqRtbMIiZLP+zF7QkLZnskJ9m/bZ8AX1IeRAm0KwNBFsavSoeoFtV9Xuyfy+pK4oO4DmW4ozVu1c5sfrG5EiedjLBgnO20wAnzdtu4bS27KW0tBtnDZnh3pYPUSNbmeNJkpnWeng2igdpMf7LlVuvg7IbTHVw+IcA5iXN6t9lE/1HOLKn4aRX4XAEvTA+/ImaN61dUggjkfMo9ICPUqrfMPSVRCOUjTRkQwsW8tWLOnGFk7C3H9wzfqUPV0VuTDIdwY84JE2njKX8KmvJHC+SFECFQBNAGJeSwiHiupwSfOQNjBOlzQt9q4kwxiFgiQ8RYWAGDZ6L/BcAdneRYKBdCG7U3Nrs5bS0E+kFApuYu1oTuKbd1DU141+qCl/HJo9w1NAa0bzAMioBAiAh7kR0SCyBd4gcwdCAkTC2/kbbthiTDFbaXlww/nraUgP7h45+OmvAxRGJlGeeJq8V/5MfuxBJh8YDb+n5DIJ5Gw5G7VRB8NJr+7zRCANs0cpRhZWwBntX/wdbu7yMo6NDzhmb0uso9pYs8UjSk7g1wcCJfs2AORq+Fm5wXDGLAUD0Ert+etpSB/uAJjjnaBpravqA05NOwbfsQU58OQFMcqf3L7Chz99T6wkbdtwxEgvsEVg2N5SynoDDgw/K9I8Xeh7fHnQTRQ2+hT/QwdEUJq70wmNwfCZSObafZPs63nf2tkrT7rDDfkraWgs9izO/mi1vVXRW3I4XEDI19Mm/pVlgsnkie5LgJFsN4HNvJ2ysQEwW9zRW0obykFnUX3cbt3qfJiGPysuiYmAQmLRoc/qQ1dXziR/Mh3F3HZ8L1U/GS2BNP3971qSFSMrC04MNHy2k1pghuKgPrh4fFoyt7hj2ndvs5S4UTyIFcHQiI1Yj1sdnzzLBHm7S7cVXsgby0FnQkJiyJ/ia8XmUbjgWvQkP7ax7Rhl9O1togLsiP3PAbn/c2+aZtmxcXS6pOzjmcUI2sLDg77RjcB/FzReHR8kEjdQO0in+BPQewtYkjZkbsD4crRYcKum+lDdiQCfMMec3NYjKwtOCyuf9cVvm53hFg0lxfR8tpX0gZOU48npKvY0sqC3B0IACQiG7Suu2f0yNuIgGADF9aey1tKQedDoukiXqBJMQp6IsQra7dJilN0zK6naz24FUwfHXFqVvp3/crAH87UlN4XRtb69Lq8tRSEA5ftuh9qXylGQU8MrqgNuYHaR3zCc9TjSamwiI1MEx3hQADA1NZpMkNH3pYIArdw5XO/zltKQVhIon/p6/awBDJQqZOIlu/aIE33Rh2zL6tiRCpEsZprLx1zOAf98J3m7cGZNvL2+ZG1Yr4YWVswYbh6dMSZXQSP2VUv1Sa4esd2t7z2qaSJN2jD/kGBYekiJJrdzVzbRcc4kNWrUQflypmWecIYgMd9GBi9J28tBWHCFcPfSxO7tqgNmTyV1bVHXX/tf0kkr8OYXqZqTzAGnt/eKo7s5OgYBwIA9WTs29rQp2dW4IswsytJJHkrKQgUAxKHT2tDh2bWtZE9XLzzcQ4MXyKJvhYep2vDvum9baPb70xKrVqSYrU3PjrqdJy3et92P1i+ATH/N334Xc7ZSt3dvM919MhagoFcMHzRfw/2F1l8lsPraDtz+oe3pEM9n1Hw6yIWzMS6g5LDMXyJ+ZWjwwBuBHCjbV+8BGnzJKicoobXmdkxJHskQvyCQvvPn+CPfZswQ+dFHIR6jdbxe1CWDGHPyqDB0Xjdgv49O/PWckBUFOZrUFC184+18yZOsO+Av4zp4blTFQ2b5s/CFAJgBMtdpsfMLatd7bf2fFAjvN407GJUJuaAg3yXGcOlzz4D4LsAvmt3IBo7ptrXBa7xTRxL0WNgWAViGYAjDJhHY9zxF0sWEMn/B1yL6AtGGeG8AAAAAElFTkSuQmCC"><div class="step" id="step"></div></header>
+<div class="bar"><span id="prog"></span></div>
+<main id="main"></main>
+<footer id="foot"><button class="btn back" id="back" type="button">Back</button><button class="btn next" id="next" type="button">Next</button></footer>
+</div>
+<script>
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbzeJ5pDL9aw-sD3kxUMld5zZw-PHgkUqTE-PjPpCKxgRCzM25kxnQ1D728yxg2qv2cb/exec';
+var A = {};            // answers
+var hp = '';           // honeypot
+var sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+var FACES = ['😖','😕','😐','🙂','😍'];
+
+function worn(k){ var w=A.which_worn; return w==='both' || w===k; }
+var S = [
+ {id:'who', title:'Welcome', render:function(){ return '<h1>How did it go?</h1><p class="sub">Thank you for running with VING in New York. This takes about 3 minutes. First, who is answering?</p>'+
+   '<label class="f" for="name">Your name</label><input type="text" id="name" autocomplete="name" maxlength="100" placeholder="First and last name" value="'+esc(A.name)+'">'+
+   '<label class="f" for="email">Email (optional)</label><input type="email" id="email" autocomplete="email" maxlength="120" placeholder="you@example.com" value="'+esc(A.email)+'">'+
+   '<p class="hint" style="margin-top:8px">Only if you are happy for us to follow up with you.</p><input class="hp" tabindex="-1" autocomplete="off" id="hp" aria-hidden="true">'; },
+   valid:function(){ A.name=val('name').trim(); A.email=val('email').trim(); hp=val('hp'); if(!A.name) return 'Please type your name.'; if(A.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(A.email)) return 'That email does not look right.'; return ''; }},
+ {id:'consent', title:'Privacy and photos', render:function(){ return '<p class="q">Two quick confirmations</p>'+
+   '<div class="note"><b>Privacy notice.</b> VING uses your answers to improve its products and events. They are reviewed by the VING team, mostly as a group. Your name is stored with your answers so we can follow up and so we can match them to the event. Answers are stored in VING\'s Google account and kept only as long as needed for this review. To see or delete your answers, reply to the email you received from VING.</div>'+
+   chk('privacy_ok','I have read the privacy notice and agree to my answers being used this way.')+
+   '<p class="q" style="font-size:18px;margin-top:18px">Photos from the event</p>'+
+   '<p class="hint">VING took photos and videos at the run. Please choose one.</p>'+
+   opt('photo_choice','agree','VING may share images that include me','on VING\'s official social media channels only. No payment, no paid advertising, never sold. I can withdraw any time.')+
+   opt('photo_choice','no','Please do not feature me','VING will not use close-up images of me.'); },
+   valid:function(){ if(!A.privacy_ok) return 'Please tick the privacy confirmation to continue.'; if(!A.photo_choice) return 'Please choose a photo option.'; return ''; }},
+ {id:'runs', render:function(){ return '<p class="q">How often do you run?</p>'+ opts('runs_per_week',[['0-1','0 to 1 times a week'],['2-3','2 to 3 times a week'],['4-5','4 to 5 times a week'],['6+','6 or more']]); }, valid:req('runs_per_week')},
+ {id:'sandal', render:function(){ return '<p class="q">Have you run in sandals before?</p>'+ opts('sandal_before',[['regularly','Yes, regularly'],['some','A few times'],['first','This was my first time']]); }, valid:req('sandal_before')},
+ {id:'socks', render:function(){ return '<p class="q">What did you wear on your feet?</p>'+ opts('socks',[['split-toe','Split-toe (tabi) socks'],['regular','Regular socks'],['none','No socks'],['other','Something else']]); }, valid:req('socks')},
+ {id:'which', render:function(){ return '<p class="q">Which VING sandals did you wear today?</p><p class="hint">We will only ask about the ones you tried.</p>'+ opts('which_worn',[['both','Both Nirun 2.0 and Nirun Pro'],['n2','Nirun 2.0'],['pro','Nirun Pro'],['none','Neither, I ran in my own shoes']]); }, valid:req('which_worn')},
+ grid('n2','Nirun 2.0',function(){return worn('n2');}),
+ issues('n2','Nirun 2.0',function(){return worn('n2');}),
+ grid('pro','Nirun Pro',function(){return worn('pro');}),
+ issues('pro','Nirun Pro',function(){return worn('pro');}),
+ {id:'prefer', when:function(){return A.which_worn==='both';}, render:function(){ return '<p class="q">Which did you prefer?</p>'+ opts('preferred',[['n2','Nirun 2.0'],['pro','Nirun Pro'],['same','No preference']]); }, valid:req('preferred')},
+ {id:'buy', when:function(){return A.which_worn!=='none';}, render:function(){ return '<p class="q">Would you buy a pair?</p>'+ opts('would_buy',[['yes','Yes'],['maybe','Maybe'],['no','No']]); }, valid:req('would_buy')},
+ {id:'nps', render:function(){ var h='<p class="q">How likely are you to recommend VING Run Club to a friend?</p><p class="hint">0 = not at all, 10 = definitely</p><div class="scale n" style="flex-wrap:wrap">'; for(var i=0;i<=10;i++){ h+='<button type="button" style="flex:0 0 calc(25% - 5px);margin-bottom:6px" data-k="nps" data-v="'+i+'" class="'+(A.nps===String(i)?'on':'')+'">'+i+'</button>'; } return h+'</div>'; }, valid:req('nps')},
+ {id:'event', render:function(){ return '<p class="q">Rate the day</p><p class="hint">1 = poor, 5 = great</p><div class="rows">'+ row('ev_org','Check-in and organisation',false)+ row('ev_route','The route',false)+ row('ev_team','The VING team',false)+ row('ev_coffee','Coffee and activities',false)+'</div>'; }, valid:function(){ var ks=['ev_org','ev_route','ev_team','ev_coffee']; for(var i=0;i<ks.length;i++) if(!A[ks[i]]) return 'Please rate each one.'; return ''; }},
+ {id:'improve', render:function(){ return '<p class="q">One thing we should improve</p><p class="hint">Optional, but it helps a lot.</p><textarea id="improve" maxlength="800" placeholder="Type here">'+esc(A.improve)+'</textarea><p class="q" style="font-size:18px;margin-top:20px">Would you join another VING run?</p>'+ opts('join_again',[['yes','Yes'],['maybe','Maybe'],['no','No']]); }, valid:function(){ A.improve=val('improve').trim(); if(!A.join_again) return 'Please choose one.'; return ''; }},
+ {id:'final', render:function(){ return '<p class="q">Anything else?</p><p class="hint">Optional.</p><textarea id="final" maxlength="1200" placeholder="Anything about the sandals or the day">'+esc(A.final_comment)+'</textarea>'; }, valid:function(){ A.final_comment=val('final').trim(); return ''; }, last:true}
+];
+function grid(k,name,when){ return {id:k+'g', when:when, render:function(){ return '<p class="q">'+name+'</p><p class="hint">How did it feel? Tap a face.</p><div class="rows">'+ row(k+'_overall','Overall',true)+ row(k+'_fit','Fit and hold',true)+ row(k+'_cushion','Cushioning',true)+ row(k+'_toepost','Toe post comfort',true)+ row(k+'_grip','Grip',true)+'</div><div class="ends"><span>😖 Poor</span><span>Great 😍</span></div>'; }, valid:function(){ var ks=['overall','fit','cushion','toepost','grip']; for(var i=0;i<ks.length;i++) if(!A[k+'_'+ks[i]]) return 'Please rate each one.'; return ''; }}; }
+function issues(k,name,when){ var L=[['none','No problems'],['toe','Toe or toe post'],['arch','Arch'],['heel','Heel'],['strap','Strap or rubbing'],['blister','Blister or hot spot'],['other','Something else']]; return {id:k+'i', when:when, render:function(){ var sel=A[k+'_issues']||[]; var h='<p class="q">'+name+': any problems?</p><p class="hint">Choose all that apply.</p>'; L.forEach(function(o){ h+='<button type="button" class="opt'+(sel.indexOf(o[0])>-1?' on':'')+'" data-multi="'+k+'_issues" data-v="'+o[0]+'">'+o[1]+'</button>'; }); return h+'<label class="f" for="'+k+'c">Comments (optional)</label><textarea id="'+k+'c" maxlength="800" placeholder="What did you like or dislike?">'+esc(A[k+'_comment'])+'</textarea>'; }, valid:function(){ A[k+'_comment']=val(k+'c').trim(); if(!(A[k+'_issues']||[]).length) return 'Please choose at least one option.'; return ''; }}; }
+function row(key,label,faces){ var h='<div class="r"><div class="t">'+label+'</div><div class="scale">'; for(var i=1;i<=5;i++){ h+='<button type="button" data-k="'+key+'" data-v="'+i+'" class="'+(A[key]===String(i)?'on':'')+'" aria-label="'+i+'">'+(faces?FACES[i-1]:i)+'</button>'; } return h+'</div></div>'; }
+function opt(k,v,t,s){ return '<button type="button" class="opt'+(A[k]===v?' on':'')+'" data-k="'+k+'" data-v="'+v+'">'+t+(s?'<small>'+s+'</small>':'')+'</button>'; }
+function opts(k,l){ return l.map(function(o){ return opt(k,o[0],o[1]); }).join(''); }
+function chk(k,t){ return '<div class="chk'+(A[k]?' on':'')+'" data-chk="'+k+'" role="checkbox" aria-checked="'+(!!A[k])+'" tabindex="0"><i>'+(A[k]?'✓':'')+'</i><span>'+t+'</span></div>'; }
+function req(k){ return function(){ return A[k]?'':'Please choose one.'; }; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function val(id){ var e=document.getElementById(id); return e?e.value:''; }
+
+var order=[], pos=0, busy=false;
+function visible(){ return S.filter(function(s){ return !s.when || s.when(); }); }
+function show(keepScroll){
+  order=visible(); var s=order[pos]; var m=document.getElementById('main');
+  m.innerHTML=s.render()+'<div class="err" id="err"></div>';
+  document.getElementById('step').textContent=(pos+1)+' / '+order.length;
+  document.getElementById('prog').style.width=((pos)/order.length*100)+'%';
+  document.getElementById('back').style.display=pos?'':'none';
+  var nx=document.getElementById('next'); nx.textContent=s.last?'Send':'Next'; nx.disabled=false;
+  if(!keepScroll) window.scrollTo(0,0);
+}
+function err(t){ document.getElementById('err').textContent=t||''; }
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-k],[data-multi],[data-chk]'); if(!t) return;
+  if(t.dataset.chk){ A[t.dataset.chk]=!A[t.dataset.chk]; keep(); show(true); return; }
+  if(t.dataset.multi){ var k=t.dataset.multi, v=t.dataset.v, a=A[k]||[]; if(v==='none'){ a=a.indexOf('none')>-1?[]:['none']; } else { a=a.filter(function(x){return x!=='none';}); var i=a.indexOf(v); if(i>-1)a.splice(i,1); else a.push(v); } A[k]=a; keep(); show(true); return; }
+  A[t.dataset.k]=t.dataset.v; keep();
+  // refresh selection in place, keep typed text; auto-advance only on single-choice screens
+  var s=order[pos]; var single=/^(runs|sandal|socks|which|prefer|buy|nps)$/.test(s.id);
+  if(single){ show(true); setTimeout(function(){ document.getElementById('next').click(); },180); } else { show(true); }
+});
+document.addEventListener('keydown',function(e){ if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.chk){ e.preventDefault(); e.target.click(); } });
+function keep(){ var ids=['name','email','improve','final','n2c','proc']; ids.forEach(function(id){ var e=document.getElementById(id); if(!e) return; var map={name:'name',email:'email',improve:'improve',final:'final_comment',n2c:'n2_comment',proc:'pro_comment'}; A[map[id]]=e.value; }); }
+document.getElementById('back').onclick=function(){ keep(); if(pos>0){ pos--; show(); } };
+document.getElementById('next').onclick=function(){
+  if(busy) return; var s=order[pos]; var m=s.valid?s.valid():''; if(m){ err(m); return; }
+  if(s.last){ submit(); return; }
+  pos++; if(pos>=visible().length) pos=visible().length-1; show();
+};
+function submit(){
+  busy=true; var nx=document.getElementById('next'); nx.disabled=true; nx.textContent='Sending…'; err('');
+  var p={}; Object.keys(A).forEach(function(k){ p[k]=A[k]; }); p.sid=sid; p.hp=hp; p.client_time=new Date().toISOString(); p.ua=navigator.userAgent.slice(0,160);
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)})
+   .then(function(r){ return r.json(); })
+   .then(function(j){ if(j&&j.ok){ done(); } else { throw new Error((j&&j.error)||'failed'); } })
+   .catch(function(){ busy=false; nx.disabled=false; nx.textContent='Send'; err('Sorry, we could not send your answers. Please check your connection and tap Send again.'); });
+}
+function done(){
+  document.getElementById('foot').style.display='none'; document.getElementById('prog').style.width='100%'; document.getElementById('step').textContent='DONE';
+  document.getElementById('main').innerHTML='<div class="done"><div class="big">🙌</div><h1>Thank you, '+esc((A.name||'').split(' ')[0])+'!</h1><p class="sub">Your answers are in. See you on the next run with VING.</p></div>';
+}
+show();
+</script></body></html>
